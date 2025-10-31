@@ -7,52 +7,42 @@ This project is a template for a modern fullstack app using:
 
 ---
 
+## Exercise: Production-Ready Image Gallery (~1 hour)
 
-## Coding Exercise: Implement Quotas (~1h)
+**Goal:** Improve the existing image gallery to make it production-ready. The backend is complete - focus on creating an excellent user experience.
 
-Implement quotas for image uploads in the backend:
+### The Challenge
 
-1. **Per-user quota:** Each user can only add up to 5 images per day.
-2. The `/images/` POST endpoint should enforce this quota.
-3. If a user exceeds their quota, return the appropriate status code
-4. Show the user's current quota usage in the frontend
-5. **(Bonus)** Add a global rate limit: no more than 100 image uploads per day for all users combined.
+Currently, users can only add images by pasting URLs. This is a poor user experience. 
+
+**Your task:** Replace the URL input with proper file uploads and make the app feel professional and polished.
+
+### What We're Looking For
+
+We want to see how you approach building production-ready user interfaces. Consider:
+
+- **User Experience:** How do you make uploads intuitive and provide good feedback?
+- **Error Handling:** What happens when things go wrong?
+- **Code Quality:** How do you structure and organize your code?
+- **Performance:** How do you keep the UI responsive?
+
+### Hints
+
+- The backend accepts file uploads via multipart/form-data
+- API documentation is available at http://localhost:8000/docs
+- Consider what happens when things go wrong
+- The existing code is a starting point - feel free to refactor
 
 ---
-
-## Bonus Exercise: User Authentication & Ownership
-
-Add user authentication and image ownership:
-
-1. Add endpoints for user registration and login
-2. Store users in the SQLite database
-3. Associate each image with its owner
-4. Only allow authenticated users to add/delete images.
-5. Only allow the owner of an image to delete it.
-6. Add an endpoint to get all images for the current user.
-7. Update the frontend to support login/logout and show only the user's images.
 
 ## Getting Started
 
-### Prerequisites
-- [Docker](https://www.docker.com/get-started)
-- [Docker Compose v2.17+](https://docs.docker.com/compose/compose-v2/) (for `docker compose watch`)
-
----
-
-## Running the Project
-
-From the project root, run:
-
+1. Start the backend and frontend:
 ```bash
 docker compose up --build
 ```
 
-Or, for live reload on file changes (recommended for development):
-
-```bash
-docker compose watch
-```
+Both services have hot-reload enabled - changes to your code will automatically update.
 
 ---
 
