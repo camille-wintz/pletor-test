@@ -1,75 +1,39 @@
-# Fullstack FastAPI + Vite React Project
+# Image Gallery Exercise
 
-This project is a template for a modern fullstack app using:
-- **Backend:** FastAPI (Python) with `uv` for dependency management and hot-reload
-- **Frontend:** Vite + React (JavaScript/TypeScript)
-- **Development:** Docker Compose for orchestration, with live reload for both frontend and backend
+## Context
 
----
+You've joined a team that inherited this image gallery application. The product team has collected user feedback and identified several pain points:
 
-## Exercise: Production-Ready Image Gallery (~1 hour)
+1. *"Adding images is really clunky - I have to find URLs somewhere else first"*
+2. *"When I have lots of images, the page gets sluggish"*
+3. *"Sometimes things fail and I have no idea what went wrong or what to do"*
+4. *"I tried to add several images at once and it was painful"*
 
-**Goal:** Improve the existing image gallery to make it production-ready. The backend is complete - focus on creating an excellent user experience.
+The previous developer left the codebase in a... let's say "functional" state.
 
-### The Challenge
+## Your Task (~1.5 hours)
 
-Currently, users can only add images by pasting URLs. This is a poor user experience. 
+Address the user feedback and make this gallery production-ready.
 
-**Your task:** Replace the URL input with proper file uploads and make the app feel professional and polished.
+We're more interested in seeing your thought process and how you prioritize than in seeing everything completed. Feel free to leave TODOs or notes about what you would do with more time.
 
-### What We're Looking For
+## What We're Evaluating
 
-We want to see how you approach building production-ready user interfaces. Consider:
-
-- **User Experience:** How do you make uploads intuitive and provide good feedback?
-- **Error Handling:** What happens when things go wrong?
-- **Code Quality:** How do you structure and organize your code?
-- **Performance:** How do you keep the UI responsive?
-
-### Hints
-
-- The backend accepts file uploads via multipart/form-data
-- API documentation is available at http://localhost:8000/docs
-- Consider what happens when things go wrong
-- The existing code is a starting point - feel free to refactor
-
----
+- How you identify and prioritize problems
+- Your approach to UX decisions and trade-offs
+- Code organization and architecture choices
+- How you handle edge cases and failures
+- Performance awareness
 
 ## Getting Started
 
-1. Start the backend and frontend:
+1. Start the application:
 ```bash
 docker compose up --build
 ```
 
-Both services have hot-reload enabled - changes to your code will automatically update.
+2. Open the app: http://localhost:5173
 
----
+3. API docs: http://localhost:8000/docs
 
-## Project Structure
-
-```
-backend/    # FastAPI app (Python)
-frontend/   # Vite + React app (JS/TS)
-docker-compose.yml
-```
-
----
-
-## Accessing the Apps
-
-- **Backend (FastAPI):** [http://localhost:8000](http://localhost:8000)
-- **Frontend (Vite React):** [http://localhost:5173](http://localhost:5173)
-
----
-
-## Development Notes
-
-- **Backend:**
-  - Hot reload enabled via `uvicorn --reload` and Docker volume mount.
-  - Edit code in `backend/` and changes will reflect automatically.
-- **Frontend:**
-  - Hot reload enabled via Vite dev server and Docker volume mount.
-  - Edit code in `frontend/` and changes will reflect automatically.
-
----
+Both services have hot-reload enabled. Feel free to modify anything - frontend, backend, or both.
