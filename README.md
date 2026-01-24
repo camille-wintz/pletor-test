@@ -1,51 +1,112 @@
-# Image Gallery Exercise
+# Image Gallery Exercise: Senior Frontend
 
 ## Business Context
 
-You've joined **PictoShare**, a startup building a collaborative image gallery platform for creative teams. The product is used by marketing agencies, design studios, and content creators to organize and share visual assets.
+You've joined **PictoShare**, a collaborative image gallery for creative
+teams: marketing agencies, design studios, content creators. An earlier
+contractor shipped an MVP; it works, but barely. Two pieces of user
+feedback have become blockers for an upcoming client demo:
 
-The application was initially built as an MVP by a contractor who has since left. It works, but barely. The product team has been collecting user feedback, and the pain points are piling up:
+1. *"When I have lots of images, scrolling is janky and my fan spins up."*
+2. *"Uploading a shoot means dragging files one at a time and praying nothing fails."*
 
-1. *"Adding images is really clunky - I have to find URLs somewhere else first"*
-2. *"When I have lots of images, the page gets sluggish and scrolling is janky"*
-3. *"Sometimes things fail and I have no idea what went wrong or what to do"*
-4. *"I tried to add several images at once and it was painful"*
-5. *"I accidentally deleted an image and there was no way to undo it"*
-6. *"I can't find anything - we need search or filtering"*
-7. *"Would be nice to organize images into albums or categories"*
-8. *"The image titles are often wrong or missing - can't we auto-detect something?"*
+Your job: make the gallery production-ready along the axes that matter
+for a visual product: rendering performance, layout quality, and
+upload resilience.
 
-Leadership has prioritized making this product "enterprise-ready" for an upcoming demo with a major client.
+---
 
 ## Your Task (~1.5 hours)
 
-Your mission is to improve this application. **There is intentionally more work listed here than can be completed in the time allotted.** We want to see how you prioritize, make trade-offs, and communicate your decisions.
+The database is seeded with ~2000 images of mixed aspect ratios
+(landscape, portrait, square) and varied file sizes. Work in priority
+order. **We care more about your reasoning and tradeoffs than about
+finishing everything.**
 
-Feel free to:
-- Use any tools, libraries, or frameworks you find relevant
-- Modify anything - frontend, backend, database, or all of the above
-- Leave TODOs or notes explaining what you would do with more time
+### 1. Make the gallery fast and smooth (required)
+
+The current grid renders every image at full resolution on mount.
+Bring it to production quality:
+
+- Smooth scrolling at 2000+ images, including on a throttled "Slow 4G"
+  connection (Chrome DevTools → Network → Slow 4G, CPU 4× slowdown).
+- Handle **mixed aspect ratios** without layout shift. A justified-rows
+  or masonry layout is expected: not a fixed-size grid.
+- Scroll position should survive navigating away and back.
+- Serve appropriately sized images. Loading a 4000px original into a
+  300px card is not acceptable. You may add a backend thumbnail endpoint,
+  a transform proxy, or anything equivalent: your call.
+
+**Idel budget to hit:**
+- LCP < 2.5s on Slow 4G
+- INP < 200ms during scroll
+- CLS = 0 after images load
+- Memory stable after scrolling the full list (no unbounded growth)
+
+### 2. Resilient batch upload (required)
+
+Replace the single-file form with a batch uploader that a real user
+would trust with 50 files from a shoot:
+
+- Drag-and-drop multiple files at once.
+- Concurrent upload queue
+- Per-file progress, cancel individual, and retry on failure with
+  backoff.
+- The UI should stay responsive while uploads are in flight.
+- Bonus: surviving a tab refresh mid-batch.
+
+### 3. Notes (required, short)
+
+Add a `NOTES.md` at the repo root covering:
+
+- **What you measured.** Paste or screenshot a DevTools Performance or
+  Lighthouse snapshot before/after.
+- **Key tradeoffs.** Libraries you chose and why, and what you chose
+  *not* to do.
+- **What you'd do next** with another half day.
+
+### Bonus (only if the above is solid)
+- Layout-mode toggle (justified ↔ masonry) that preserves scroll
+  position.
+- Video upload + inline playback.
+- One RTL or Playwright test covering the upload-to-gallery flow.
+
+---
+
+## Non-goals
+
+Don't spend time on these unless they unblock the above:
+
+- Auth, user management, or quotas.
+- Backend rewrites beyond what's needed to serve thumbnails or
+  support resumable uploads.
+- Exhaustive test coverage
+
+---
 
 ## What We're Evaluating
 
-- **Prioritization**: How you decide what to tackle first given limited time
-- **Problem-solving**: Your approach to understanding and fixing issues
-- **Code quality**: Organization, readability, and maintainability
-- **UX thinking**: How you handle edge cases, errors, and user feedback
-- **Technical decisions**: Your choice of tools/patterns and ability to justify them
-- **Communication**: How clearly you document decisions and trade-offs
+- **Rendering performance under load.** Can you identify the bottleneck,
+  fix it, and prove the fix with numbers?
+- **Layout quality.** How you handle variable aspect ratios, loading
+  states, and avoid CLS.
+- **Upload resilience.** How the UI behaves when the network misbehaves.
+- **Architecture.** How you split `App.tsx`, where state lives, how the
+  API surface is typed.
+- **Judgement.** What you chose to skip, and how clearly you explain it.
 
-**Note on UI/design**: A polished, beautiful UI is a bonus but not a requirement. We care more about functionality, code quality, and your reasoning than pixel-perfect styling.
+If you use a virtualization or layout library, be ready to explain how
+it handles variable heights and why that choice fits this product.
+
+---
 
 ## Getting Started
 
-1. Start the application:
 ```bash
 docker compose up --build
 ```
 
-2. Open the app: http://localhost:5173
+- App: http://localhost:5173
+- API docs: http://localhost:8000/docs
 
-3. API docs: http://localhost:8000/docs
-
-Both services have hot-reload enabled. Feel free to modify anything - frontend, backend, or both.
+Both services hot-reload. Modify anything: frontend, backend, or both.
