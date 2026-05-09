@@ -17,8 +17,15 @@ import {
   RETRY_DELAYS_MS,
 } from './constants'
 import { initialState, uploadQueueReducer } from './uploadQueueReducer'
-import { ACTIVE_STATUSES, type UploadQueueState, type UploadTask } from './types'
+import { ACTIVE_STATUSES, TERMINAL_STATUSES, type UploadQueueState, type UploadTask } from './types'
 import { isRetryable, uploadImageXhr, UploadError } from './uploadXhr'
+import {
+  forgetTask,
+  forgetTasks,
+  isPersistableFile,
+  loadPersistedTasks,
+  persistTask,
+} from './uploadStorage'
 
 interface InFlightEntry {
   controller?: AbortController
@@ -94,6 +101,7 @@ export function UploadQueueProvider({ children }: { children: ReactNode }) {
         .then(() => {
           if (!inFlight.current.has(id)) return
           inFlight.current.delete(id)
+          forgetTask(id)
           dispatch({ type: 'TASK_SUCCESS', id })
           queryClient.invalidateQueries({ queryKey: imagesQueryKey })
         })
@@ -142,10 +150,25 @@ export function UploadQueueProvider({ children }: { children: ReactNode }) {
     }
   }, [state.tasks, state.order, startUpload])
 
+  const restoredRef = useRef(false)
+  useEffect(() => {
+    if (restoredRef.current) return
+    restoredRef.current = true
+    loadPersistedTasks().then((entries) => {
+      if (entries.length === 0) return
+      dispatch({ type: 'ADD_FILES', entries })
+    })
+  }, [])
+
   const addFiles = useCallback((files: File[]) => {
     if (files.length === 0) return
     const entries = files.map((file) => ({ id: genId(), file }))
     dispatch({ type: 'ADD_FILES', entries })
+    for (const { id, file } of entries) {
+      if (isPersistableFile(file)) {
+        persistTask(id, file).catch(() => {})
+      }
+    }
   }, [])
 
   const cancelTask = useCallback((id: string) => {
@@ -155,6 +178,7 @@ export function UploadQueueProvider({ children }: { children: ReactNode }) {
       ent.controller?.abort()
       inFlight.current.delete(id)
     }
+    forgetTask(id)
     dispatch({ type: 'TASK_CANCEL', id })
   }, [])
 
@@ -163,6 +187,11 @@ export function UploadQueueProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const clearFinished = useCallback(() => {
+    const ids: string[] = []
+    for (const id of stateRef.current.order) {
+      if (TERMINAL_STATUSES.has(stateRef.current.tasks[id].status)) ids.push(id)
+    }
+    forgetTasks(ids)
     dispatch({ type: 'CLEAR_FINISHED' })
   }, [])
 

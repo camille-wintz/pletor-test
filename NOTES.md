@@ -13,7 +13,20 @@ Several changes were made:
 - Only load in 20 images chunks,
 - Cache the images and thumbnails,
 - Production mode
-- Cache
+
+## Metrics
+
+The download times are dramatically improved, going from 4 seconds to 1 second (slow 4G, CPU slowed down 4x).
+
+![Before images load](notes-images/loading-before.png)
+
+![After images load](notes-images/loading-after.png)
+
+The scrolling is still smooth in both cases, but a bit more demanding in the new version (since the images aren't build on landing.)
+
+![Before](notes-images/perf-before.png)
+
+![After](notes-images/perf-after.png)
 
 ## Thumbnails
 
@@ -29,7 +42,7 @@ Width 300px width, the thumbnails will look a bit lower quality on Retina screen
 
 ### Production mode
 
-The docker file didn't handle production mode yet, causing slow loading times of the js files.
+The docker file didn't handle production mode yet, this has been added.
 
 ### Cache
 
@@ -37,11 +50,11 @@ The images weren't cached, they are cached now.
 
 # Masonry layout
 
-The height and width of each image is determined during the upload and sent to the clients via the API. The masonic lib is used to avoid having images move from one column to another, and to free memory when scrolling down.
+The height and width of each image is determined during the upload and sent to the client via the API. Each image is assigned a column to avoid layout shifts, which causes uneven columns. It would be possible to strive for more balanced columns while keeping the asigned col, but we determined that the current improvement was already a good start while leaving room for more changed.
 
 ## Scroll stability
 
-Since we're handling different image sizes, there are new width/height properties to allow the frontend to build the visual structure before images are loaded.
+Since we're handling different image sizes, the new height/width properties are used to build the visual structure before images are loaded.
 
 ## Navigating back and forth
 
@@ -57,32 +70,37 @@ After scrolling, the upload form isn't visible anymore and it's impossible to tr
 
 For convenience and especially for mass uploads, validating each image isn't hugely practical. The validation step has been removed and the image is uploaded immediately.
 
+## Resuming uploads
+
+For uploads interrupted with reload or navigating away, the status is stored in the local storage, and the download resumes when returning.
+
 # Refactoring
 
-While the app is basically fine, it lacked several basic strucural elements:
+While the app is basically fine, it lacked several strutcural elements:
 
 - Added a tsconfig file for proper ts project management
 - Added a gitignore file to exclude python cache
 - Reorganized the main component in logical hooks and components
-- Added a Claude.md and skills for basic context
+- Added a Claude.md for basic context
 - Added a prod docker for js minification and loading times
+- Moved styles to tailwind (chosen for a good balance of performance and clarity)
+
+There is still room for improvements (aliases, biome, storybook...) but those seem more optional.
+
+## Visual refactoring
+
+The app had a dark background, unlike the app in the main branch. Given the colors (header being dark), it seemed like a bug, so we changed it to match.
 
 # Time and priorities
 
-Given the time imparted (1.5h) plus the state of the app (single component, no prod build) I decided to prioritize features over time. While the app isn't great, it's useable until the next update arrives. In this case, it's better to take longer and avoid having to rework later than to make small fixes urgently.
+While I didn't fit all the changes in the imparted time (1.5h), I decided to cover the basic required features. The architectural changes, while not asked for and not visible, are important for maintenance and clarity, and worth fitting when they're needed.
 
-My choice would have been different if the features were more controversial. But given that it's thumbnails/minification/multiple upload, I felt like there wasn't much risk in making the change.
-
-Other tasks skipped:
-
-## Tailwind
-
-Currently, the CSS is simply inline. Given a bit more time, I would have moved the CSS to a tailwind config, and defined purely stylistic components.
+That said, some features were skipped:
 
 ## Transitions
 
-The bottom component doesn't have transitions and looks basic. With more time, I would have polished it more.
+The bottom component doesn't have transitions and looks basic. With more time, I would have polished it more. The interactions are also minimalistic. Same for the images: with more time, I'd have preloaded a mini-thumbnail with high blur to avoid having blank rectangles.
 
 ## Bonus
 
-While Playwright has real value to avoid regressions, the other two are expanding on the scope. For the video, it would need to generate a clean thumbnail via canvas, and play with the video tag inline. For the toggle, while the feature is simple, it can cause some side-effects that would need to be tested cleanly.
+While Playwright has real value to avoid regressions, the other two are expanding on the scope. For the video, it would need to generate a clean thumbnail via canvas, and play with the video tag inline. For the toggle, while the feature is simple, it can cause some side-effects that would need to be tested cleanly. So Playwright was the only one covered.

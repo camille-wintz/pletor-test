@@ -29,7 +29,7 @@ function App() {
 
   return (
     <UploadQueueProvider>
-      <div className="mx-auto my-8 px-5 font-sans">
+      <div className="mx-auto my-8 px-5 font-sans max-w-336">
         <h1 className="text-center text-5xl font-bold mb-10 tracking-[-2px] text-fg-strong">
           Image Gallery
         </h1>
