@@ -263,8 +263,14 @@ async def upload_image(
     return db_image
 
 @app.get("/images/", response_model=List[ImageRead])
-async def list_images(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Image).order_by(Image.created_at.desc()))
+async def list_images(
+    limit: int = 20,
+    offset: int = 0,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Image).order_by(Image.created_at.desc()).limit(limit).offset(offset)
+    )
     images = result.scalars().all()
     return images
 
