@@ -82,3 +82,7 @@ Currently, the CSS is simply inline. Given a bit more time, I would have moved t
 ## Transitions
 
 The bottom component doesn't have transitions and looks basic. With more time, I would have polished it more.
+
+## Bonus
+
+While Playwright has real value to avoid regressions, the other two are expanding on the scope. For the video, it would need to generate a clean thumbnail via canvas, and play with the video tag inline. For the toggle, while the feature is simple, it can cause some side-effects that would need to be tested cleanly.

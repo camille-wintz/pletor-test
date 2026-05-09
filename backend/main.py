@@ -1,3 +1,4 @@
+import os
 import random
 import re
 import uuid
@@ -23,7 +24,7 @@ from image_processing import (
 # Configuration
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
-FAILURE_RATE = 0.15  # 15% random failure rate to simulate real-world conditions
+FAILURE_RATE = float(os.environ.get("FAILURE_RATE", "0.15"))
 
 DATABASE_URL = "sqlite+aiosqlite:///./test.db"
 
