@@ -5,7 +5,7 @@ import Gallery from "./components/Gallery";
 import UploadImage from "./components/UploadImage";
 import { imagesQueryKey } from "./components/Gallery/hooks/useImages";
 
-const API_URL = "http://localhost:8000/images/";
+const API_URL = "/api/images/";
 
 function App() {
   const queryClient = useQueryClient();

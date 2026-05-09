@@ -1,4 +1,5 @@
 import random
+import re
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -8,9 +9,16 @@ from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from sqlalchemy import Column, DateTime, Integer, String, func, select
+from sqlalchemy import Column, DateTime, Integer, String, func, inspect, select, text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
+
+from image_processing import (
+    LOCAL_URL_PREFIX,
+    THUMB_WIDTHS,
+    ImageProcessingError,
+    generate_thumbs,
+)
 
 # Configuration
 UPLOAD_DIR = Path("uploads")
@@ -30,11 +38,24 @@ class Image(Base):
     title = Column(String, nullable=False)
     user = Column(String, nullable=False)
     url = Column(String, nullable=False)
+    width = Column(Integer, nullable=True)
+    height = Column(Integer, nullable=True)
+    thumbnail_small_url = Column(String, nullable=True)
+    thumbnail_mid_url = Column(String, nullable=True)
 
 class ImageCreate(BaseModel):
     title: str
     user: str
     url: str
+
+class ImageVariant(BaseModel):
+    url: str
+    width: int
+    height: int
+
+class ImageVariants(BaseModel):
+    small: Optional[ImageVariant] = None
+    mid: Optional[ImageVariant] = None
 
 class ImageRead(BaseModel):
     id: int
@@ -42,8 +63,50 @@ class ImageRead(BaseModel):
     title: str
     user: str
     url: str
+    width: Optional[int] = None
+    height: Optional[int] = None
+    variants: ImageVariants = ImageVariants()
     class Config:
         orm_mode = True
+
+
+URL_DIM_RE = re.compile(r"w=(\d+)&h=(\d+)")
+
+
+def _variant(orig_w: int, orig_h: int, target_w: int, url: str) -> ImageVariant:
+    if orig_w <= target_w:
+        return ImageVariant(url=url, width=orig_w, height=orig_h)
+    h = round(orig_h * target_w / orig_w)
+    return ImageVariant(url=url, width=target_w, height=h)
+
+
+def to_read(img: Image) -> ImageRead:
+    variants = ImageVariants()
+    if img.width and img.height:
+        if img.thumbnail_small_url:
+            variants.small = _variant(img.width, img.height, THUMB_WIDTHS["small"], img.thumbnail_small_url)
+        if img.thumbnail_mid_url:
+            variants.mid = _variant(img.width, img.height, THUMB_WIDTHS["mid"], img.thumbnail_mid_url)
+    return ImageRead(
+        id=img.id,
+        created_at=img.created_at,
+        title=img.title,
+        user=img.user,
+        url=img.url,
+        width=img.width,
+        height=img.height,
+        variants=variants,
+    )
+
+
+def _unlink_if_local(url: Optional[str]) -> None:
+    if not url or not url.startswith(LOCAL_URL_PREFIX):
+        return
+    filename = url[len(LOCAL_URL_PREFIX):]
+    try:
+        (UPLOAD_DIR / filename).unlink()
+    except FileNotFoundError:
+        pass
 
 def get_db():
     db = SessionLocal()
@@ -54,8 +117,17 @@ def get_db():
 
 app = FastAPI()
 
-# Serve uploaded files
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
+class CachedStaticFiles(StaticFiles):
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        if response.status_code == 200:
+            response.headers["cache-control"] = "public, max-age=31536000, immutable"
+        return response
+
+
+# Serve uploaded files (content-addressed by UUID, so safe to cache long-term)
+app.mount("/uploads", CachedStaticFiles(directory="uploads"), name="uploads")
 
 # Add this after creating the FastAPI app
 app.add_middleware(
@@ -75,6 +147,45 @@ def maybe_fail():
 async def on_startup():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+        def add_missing_columns(sync_conn):
+            cols = {c["name"] for c in inspect(sync_conn).get_columns("images")}
+            for name, sql_type in [
+                ("width", "INTEGER"),
+                ("height", "INTEGER"),
+                ("thumbnail_small_url", "VARCHAR"),
+                ("thumbnail_mid_url", "VARCHAR"),
+            ]:
+                if name not in cols:
+                    sync_conn.execute(text(f"ALTER TABLE images ADD COLUMN {name} {sql_type}"))
+        await conn.run_sync(add_missing_columns)
+
+    # Backfill width/height from URL for null rows (idempotent)
+    async with SessionLocal() as db:
+        rows = (await db.execute(
+            select(Image).where(Image.width.is_(None))
+        )).scalars().all()
+        for row in rows:
+            m = URL_DIM_RE.search(row.url or "")
+            if m:
+                row.width, row.height = int(m.group(1)), int(m.group(2))
+        if rows:
+            await db.commit()
+
+    # Migrate any rows still holding the old absolute "http://localhost:8000/uploads/"
+    # URL format to relative "/uploads/" — relative URLs work in both dev (via vite
+    # proxy) and prod (via nginx), and don't bake the dev hostname into stored data.
+    async with SessionLocal() as db:
+        OLD_PREFIX = "http://localhost:8000/uploads/"
+        for col in (Image.url, Image.thumbnail_small_url, Image.thumbnail_mid_url):
+            stale = (await db.execute(
+                select(Image).where(col.like(f"{OLD_PREFIX}%"))
+            )).scalars().all()
+            for row in stale:
+                current = getattr(row, col.key)
+                setattr(row, col.key, "/uploads/" + current[len(OLD_PREFIX):])
+        await db.commit()
+
     # Insert fake data if table is empty
     async with SessionLocal() as db:
         result = await db.execute(select(Image))
@@ -203,7 +314,9 @@ async def on_startup():
                 # Cycle through different aspect ratios
                 aspect_params, _ = aspect_ratios[i % len(aspect_ratios)]
                 url = f"https://images.unsplash.com/{photo_id}?{aspect_params}&fit=crop&q=100"
-                fake_images.append(Image(title=f"{title} #{i+1}", user=user, url=url))
+                m = URL_DIM_RE.search(aspect_params)
+                w, h = (int(m.group(1)), int(m.group(2))) if m else (None, None)
+                fake_images.append(Image(title=f"{title} #{i+1}", user=user, url=url, width=w, height=h))
 
             db.add_all(fake_images)
             await db.commit()
@@ -219,7 +332,7 @@ async def create_image(image: ImageCreate, db: AsyncSession = Depends(get_db)):
     db.add(db_image)
     await db.commit()
     await db.refresh(db_image)
-    return db_image
+    return to_read(db_image)
 
 @app.post("/images/upload", response_model=ImageRead)
 async def upload_image(
@@ -240,13 +353,20 @@ async def upload_image(
     if len(contents) > 10 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="File too large. Maximum size is 10MB.")
 
-    # Save file with unique name
+    # Save original with unique name
     ext = Path(file.filename).suffix if file.filename else ".jpg"
-    filename = f"{uuid.uuid4()}{ext}"
+    stem = uuid.uuid4().hex
+    filename = f"{stem}{ext}"
     file_path = UPLOAD_DIR / filename
 
     with open(file_path, "wb") as f:
         f.write(contents)
+
+    # Generate thumbnails + extract dimensions
+    try:
+        info = generate_thumbs(stem, contents, UPLOAD_DIR)
+    except ImageProcessingError:
+        raise HTTPException(status_code=400, detail="Could not process image")
 
     # Auto-generate title from filename if not provided
     if not title:
@@ -255,12 +375,20 @@ async def upload_image(
         title = original_name.replace("_", " ").replace("-", " ").title()
 
     # Create database record
-    url = f"http://localhost:8000/uploads/{filename}"
-    db_image = Image(title=title, user=user or "Anonymous", url=url)
+    url = f"{LOCAL_URL_PREFIX}{filename}"
+    db_image = Image(
+        title=title,
+        user=user or "Anonymous",
+        url=url,
+        width=info["width"],
+        height=info["height"],
+        thumbnail_small_url=info["small_url"],
+        thumbnail_mid_url=info["mid_url"],
+    )
     db.add(db_image)
     await db.commit()
     await db.refresh(db_image)
-    return db_image
+    return to_read(db_image)
 
 @app.get("/images/", response_model=List[ImageRead])
 async def list_images(
@@ -272,7 +400,7 @@ async def list_images(
         select(Image).order_by(Image.created_at.desc()).limit(limit).offset(offset)
     )
     images = result.scalars().all()
-    return images
+    return [to_read(img) for img in images]
 
 @app.get("/images/{image_id}", response_model=ImageRead)
 async def get_image(image_id: int, db: AsyncSession = Depends(get_db)):
@@ -280,7 +408,7 @@ async def get_image(image_id: int, db: AsyncSession = Depends(get_db)):
     image = result.scalar_one_or_none()
     if image is None:
         raise HTTPException(status_code=404, detail="Image not found")
-    return image
+    return to_read(image)
 
 @app.delete("/images/{image_id}", status_code=204)
 async def delete_image(image_id: int, db: AsyncSession = Depends(get_db)):
@@ -288,6 +416,9 @@ async def delete_image(image_id: int, db: AsyncSession = Depends(get_db)):
     image = result.scalar_one_or_none()
     if image is None:
         raise HTTPException(status_code=404, detail="Image not found")
+    _unlink_if_local(image.url)
+    _unlink_if_local(image.thumbnail_small_url)
+    _unlink_if_local(image.thumbnail_mid_url)
     await db.delete(image)
     await db.commit()
     return None

@@ -1,14 +1,8 @@
 import { useEffect } from 'react'
 import { useInfiniteQuery } from '@tanstack/react-query'
+import type { Image } from '../../../api-types/image'
 
-export interface Image {
-  id: string
-  title: string
-  url: string
-  created_at: string
-}
-
-const API_URL = 'http://localhost:8000/images/'
+const API_URL = '/api/images/'
 
 export const PAGE_SIZE = 20
 export const imagesQueryKey = ['images'] as const
