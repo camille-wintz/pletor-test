@@ -108,12 +108,9 @@ def _unlink_if_local(url: Optional[str]) -> None:
     except FileNotFoundError:
         pass
 
-def get_db():
-    db = SessionLocal()
-    try:
+async def get_db():
+    async with SessionLocal() as db:
         yield db
-    finally:
-        db.close()
 
 app = FastAPI()
 

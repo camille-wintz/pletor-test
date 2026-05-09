@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import type { PageOffset } from './usePageOffsetUrl'
 
 interface UseGalleryScrollArgs {
@@ -8,8 +8,6 @@ interface UseGalleryScrollArgs {
   fetchNextPage: () => void
   setPosition: (page: number, offset: number) => void
   initial: PageOffset | null
-  pages: { length: number }[] | undefined
-  itemsLength: number
 }
 
 export function useGalleryScroll({
@@ -19,40 +17,48 @@ export function useGalleryScroll({
   fetchNextPage,
   setPosition,
   initial,
-  pages,
-  itemsLength,
 }: UseGalleryScrollArgs) {
   const sentinelRef = useRef<HTMLDivElement | null>(null)
+  const restoredRef = useRef(false)
 
-  const scrollToIndex = useMemo<number | undefined>(() => {
-    if (!initial) return undefined
-    if (initial.page === 0) return undefined
-    const allPages = pages ?? []
-    if (initial.page >= allPages.length) return undefined
-    let idx = 0
-    for (let p = 0; p < initial.page; p++) idx += allPages[p].length
-    const target = idx + initial.offset
-    return target < itemsLength ? target : undefined
-  }, [initial, pages, itemsLength])
+  // Restore initial scroll position once catch-up has loaded the target page.
+  useEffect(() => {
+    if (restoredRef.current) return
+    if (!initial) return
+    if (initial.page === 0 && initial.offset === 0) return
+    if (isCatchingUp) return
+    const target = document.querySelector<HTMLElement>(
+      `[data-page="${initial.page}"][data-offset="${initial.offset}"]`,
+    )
+    if (target) {
+      target.scrollIntoView({ block: 'start' })
+      restoredRef.current = true
+    }
+  }, [isCatchingUp, initial])
 
   // Auto-load next page when sentinel enters view.
   useEffect(() => {
     const node = sentinelRef.current
     if (!node) return
-    const observer = new IntersectionObserver((entries) => {
-      const entry = entries[0]
-      if (!entry?.isIntersecting) return
-      if (isCatchingUp) return
-      if (!hasNextPage) return
-      if (isFetchingNextPage) return
-      fetchNextPage()
-    }, { rootMargin: '200px' })
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0]
+        if (!entry?.isIntersecting) return
+        if (isCatchingUp) return
+        if (!hasNextPage) return
+        if (isFetchingNextPage) return
+        fetchNextPage()
+      },
+      // Prefetch well before reaching the bottom — the sentinel sits below the
+      // tallest column, but the shortest column may end far above it.
+      { rootMargin: '1500px' },
+    )
     observer.observe(node)
     return () => observer.disconnect()
   }, [hasNextPage, isFetchingNextPage, isCatchingUp, fetchNextPage])
 
   // Update URL with topmost visible card on scroll. Skipped during catch-up
-  // so the programmatic scroll-to-index doesn't overwrite the URL state.
+  // so the programmatic scroll restoration doesn't overwrite the URL state.
   useEffect(() => {
     if (isCatchingUp) return
     let timer: ReturnType<typeof setTimeout> | null = null
@@ -86,5 +92,5 @@ export function useGalleryScroll({
     }
   }, [isCatchingUp, setPosition])
 
-  return { sentinelRef, scrollToIndex }
+  return { sentinelRef }
 }

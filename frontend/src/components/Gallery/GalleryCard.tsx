@@ -12,7 +12,7 @@ interface CardProps {
   onDelete: (id: string) => void;
 }
 
-function MasonryCard({ data: img, deleting, onDelete }: CardProps) {
+function GalleryCard({ data: img, deleting, onDelete }: CardProps) {
   const variant = img.variants?.mid ?? img.variants?.small;
   const displaySrc = variant?.url ?? img.url;
   const displayW = variant?.width ?? img.width ?? undefined;
@@ -88,4 +88,4 @@ function MasonryCard({ data: img, deleting, onDelete }: CardProps) {
   );
 }
 
-export default MasonryCard;
+export default GalleryCard;

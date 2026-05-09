@@ -3,7 +3,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import "./App.css";
 import Gallery from "./components/Gallery";
 import UploadImage from "./components/UploadImage";
+import UploadStatus from "./components/UploadStatus";
 import { imagesQueryKey } from "./components/Gallery/hooks/useImages";
+import { UploadQueueProvider } from "./upload/UploadQueueContext";
 
 const API_URL = "/api/images/";
 
@@ -27,45 +29,48 @@ function App() {
   };
 
   return (
-    <div
-      style={{
-        margin: "2rem auto",
-        fontFamily: "Inter, sans-serif",
-        padding: "0 20px",
-      }}
-    >
-      <h1
+    <UploadQueueProvider>
+      <div
         style={{
-          textAlign: "center",
-          fontSize: "3rem",
-          fontWeight: 700,
-          marginBottom: 40,
-          letterSpacing: "-2px",
-          color: "#222",
+          margin: "2rem auto",
+          fontFamily: "Inter, sans-serif",
+          padding: "0 20px",
         }}
       >
-        Image Gallery
-      </h1>
-
-      <UploadImage />
-
-      {error && (
-        <div
+        <h1
           style={{
-            background: "#f8d7da",
-            color: "#721c24",
-            padding: 12,
-            borderRadius: 6,
-            marginBottom: 20,
             textAlign: "center",
+            fontSize: "3rem",
+            fontWeight: 700,
+            marginBottom: 40,
+            letterSpacing: "-2px",
+            color: "#222",
           }}
         >
-          Error: {error.message}
-        </div>
-      )}
+          Image Gallery
+        </h1>
 
-      <Gallery deleting={deleting} onDelete={handleDelete} />
-    </div>
+        <UploadImage />
+
+        {error && (
+          <div
+            style={{
+              background: "#f8d7da",
+              color: "#721c24",
+              padding: 12,
+              borderRadius: 6,
+              marginBottom: 20,
+              textAlign: "center",
+            }}
+          >
+            Error: {error.message}
+          </div>
+        )}
+
+        <Gallery deleting={deleting} onDelete={handleDelete} />
+      </div>
+      <UploadStatus />
+    </UploadQueueProvider>
   );
 }
 

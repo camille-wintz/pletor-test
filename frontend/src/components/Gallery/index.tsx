@@ -1,9 +1,12 @@
-import { useCallback, useMemo } from "react";
-import { Masonry } from "masonic";
+import { useMemo } from "react";
 import { useImages } from "./hooks/useImages";
 import { usePageOffsetUrl } from "./hooks/usePageOffsetUrl";
 import { useGalleryScroll } from "./hooks/useGalleryScroll";
-import MasonryCard, { type ImageItem } from "./MasonryCard";
+import { useColumnCount } from "./hooks/useColumnCount";
+import GalleryCard, { type ImageItem } from "./GalleryCard";
+
+const GUTTER = 12;
+const TARGET_COL_WIDTH = 220;
 
 interface GalleryProps {
   deleting: string | null;
@@ -13,6 +16,10 @@ interface GalleryProps {
 function Gallery({ deleting, onDelete }: GalleryProps) {
   const { initial, setPosition } = usePageOffsetUrl();
   const initialPage = initial?.page ?? 0;
+  const { ref: columnsRef, count: columnCount } = useColumnCount(
+    TARGET_COL_WIDTH,
+    GUTTER,
+  );
 
   const {
     data,
@@ -35,23 +42,24 @@ function Gallery({ deleting, onDelete }: GalleryProps) {
     );
   }, [data?.pages]);
 
-  const { sentinelRef, scrollToIndex } = useGalleryScroll({
+  // Deterministic column assignment by overall index — adding new items at the
+  // end never reflows existing items into different columns.
+  const columns = useMemo(() => {
+    const cols: ImageItem[][] = Array.from({ length: columnCount }, () => []);
+    items.forEach((item, i) => {
+      cols[i % columnCount].push(item);
+    });
+    return cols;
+  }, [items, columnCount]);
+
+  const { sentinelRef } = useGalleryScroll({
     isCatchingUp,
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
     setPosition,
     initial,
-    pages: data?.pages,
-    itemsLength: items.length,
   });
-
-  const renderCard = useCallback(
-    (props: { data: ImageItem; width: number; index: number }) => (
-      <MasonryCard data={props.data} deleting={deleting} onDelete={onDelete} />
-    ),
-    [deleting, onDelete],
-  );
 
   if (isLoading) {
     return (
@@ -84,14 +92,36 @@ function Gallery({ deleting, onDelete }: GalleryProps) {
         <p style={{ color: "#666" }}>No images found. Add one above!</p>
       )}
       {items.length > 0 && (
-        <Masonry
-          items={items}
-          columnWidth={220}
-          columnGutter={12}
-          itemKey={(item) => String(item.id)}
-          render={renderCard}
-          scrollToIndex={scrollToIndex}
-        />
+        <div
+          ref={columnsRef}
+          style={{
+            display: "flex",
+            gap: GUTTER,
+            alignItems: "flex-start",
+          }}
+        >
+          {columns.map((col, colIdx) => (
+            <div
+              key={colIdx}
+              style={{
+                flex: "1 1 0",
+                minWidth: 0,
+                display: "flex",
+                flexDirection: "column",
+                gap: GUTTER,
+              }}
+            >
+              {col.map((img) => (
+                <GalleryCard
+                  key={img.id}
+                  data={img}
+                  deleting={deleting}
+                  onDelete={onDelete}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
       )}
 
       <div ref={sentinelRef} style={{ height: 1 }} />
