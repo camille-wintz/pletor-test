@@ -16,12 +16,12 @@ const STATUS_LABEL: Record<UploadTask['status'], string> = {
 }
 
 const STATUS_COLOR: Record<UploadTask['status'], string> = {
-  queued: '#888',
-  uploading: '#0066cc',
-  retrying: '#d97706',
-  success: '#198754',
-  error: '#dc3545',
-  cancelled: '#888',
+  queued: 'var(--color-fg-status)',
+  uploading: 'var(--color-primary)',
+  retrying: 'var(--color-warning)',
+  success: 'var(--color-success)',
+  error: 'var(--color-danger)',
+  cancelled: 'var(--color-fg-status)',
 }
 
 function TaskRow({ task, onCancel, onRetry }: TaskRowProps) {
@@ -30,36 +30,17 @@ function TaskRow({ task, onCancel, onRetry }: TaskRowProps) {
   const canRetry = task.status === 'error' && task.file !== null
 
   return (
-    <div
-      style={{
-        padding: '8px 4px',
-        borderBottom: '1px solid #f0f0f0',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 4,
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <div className="px-1 py-2 flex flex-col gap-1 border-b border-border-row">
+      <div className="flex items-center gap-2">
         <span
           title={task.name}
-          style={{
-            fontSize: 13,
-            color: '#222',
-            flex: 1,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
+          className="text-[13px] text-fg-strong flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
         >
           {task.name}
         </span>
         <span
-          style={{
-            fontSize: 11,
-            color: STATUS_COLOR[task.status],
-            fontWeight: 500,
-            flexShrink: 0,
-          }}
+          className="text-[11px] font-medium shrink-0"
+          style={{ color: STATUS_COLOR[task.status] }}
         >
           {STATUS_LABEL[task.status]}
           {task.status === 'uploading' && ` ${fillPct}%`}
@@ -69,19 +50,7 @@ function TaskRow({ task, onCancel, onRetry }: TaskRowProps) {
             type="button"
             onClick={() => onCancel(task.id)}
             aria-label={`Cancel ${task.name}`}
-            style={{
-              flexShrink: 0,
-              width: 20,
-              height: 20,
-              padding: 0,
-              border: 'none',
-              borderRadius: '50%',
-              background: 'rgba(0,0,0,0.08)',
-              color: '#444',
-              cursor: 'pointer',
-              fontSize: 14,
-              lineHeight: '20px',
-            }}
+            className="shrink-0 size-5 p-0 border-none rounded-full bg-overlay-soft text-fg-muted cursor-pointer text-sm leading-5"
           >
             ×
           </button>
@@ -90,44 +59,25 @@ function TaskRow({ task, onCancel, onRetry }: TaskRowProps) {
           <button
             type="button"
             onClick={() => onRetry(task.id)}
-            style={{
-              flexShrink: 0,
-              padding: '2px 8px',
-              border: '1px solid #dc3545',
-              borderRadius: 4,
-              background: '#fff',
-              color: '#dc3545',
-              cursor: 'pointer',
-              fontSize: 11,
-              fontWeight: 500,
-            }}
+            className="shrink-0 px-2 py-0.5 border border-danger rounded bg-surface text-danger cursor-pointer text-[11px] font-medium"
           >
             Retry
           </button>
         )}
       </div>
 
-      <div
-        style={{
-          height: 4,
-          width: '100%',
-          background: '#eee',
-          borderRadius: 2,
-          overflow: 'hidden',
-        }}
-      >
+      <div className="h-1 w-full bg-border-subtle rounded-sm overflow-hidden">
         <div
+          className="h-full transition-[width] duration-120 ease-linear"
           style={{
-            height: '100%',
             width: `${task.status === 'success' ? 100 : task.status === 'cancelled' || task.status === 'error' ? 0 : fillPct}%`,
             background: STATUS_COLOR[task.status],
-            transition: 'width 120ms linear',
           }}
         />
       </div>
 
       {task.status === 'error' && task.errorMessage && (
-        <span style={{ fontSize: 11, color: '#dc3545' }}>{task.errorMessage}</span>
+        <span className="text-[11px] text-danger">{task.errorMessage}</span>
       )}
     </div>
   )

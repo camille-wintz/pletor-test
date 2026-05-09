@@ -63,7 +63,7 @@ function Gallery({ deleting, onDelete }: GalleryProps) {
 
   if (isLoading) {
     return (
-      <div style={{ textAlign: "center", padding: 40 }}>
+      <div className="text-center p-10">
         <p>Loading images...</p>
       </div>
     );
@@ -71,16 +71,7 @@ function Gallery({ deleting, onDelete }: GalleryProps) {
 
   if (error) {
     return (
-      <div
-        style={{
-          background: "#f8d7da",
-          color: "#721c24",
-          padding: 12,
-          borderRadius: 6,
-          marginBottom: 20,
-          textAlign: "center",
-        }}
-      >
+      <div className="bg-danger-soft text-danger-strong p-3 rounded-md mb-5 text-center">
         Error: {error.message}
       </div>
     );
@@ -89,27 +80,19 @@ function Gallery({ deleting, onDelete }: GalleryProps) {
   return (
     <>
       {items.length === 0 && (
-        <p style={{ color: "#666" }}>No images found. Add one above!</p>
+        <p className="text-fg-subtle">No images found. Add one above!</p>
       )}
       {items.length > 0 && (
         <div
           ref={columnsRef}
-          style={{
-            display: "flex",
-            gap: GUTTER,
-            alignItems: "flex-start",
-          }}
+          className="flex items-start"
+          style={{ gap: GUTTER }}
         >
           {columns.map((col, colIdx) => (
             <div
               key={colIdx}
-              style={{
-                flex: "1 1 0",
-                minWidth: 0,
-                display: "flex",
-                flexDirection: "column",
-                gap: GUTTER,
-              }}
+              className="flex flex-col flex-1 min-w-0"
+              style={{ gap: GUTTER }}
             >
               {col.map((img) => (
                 <GalleryCard
@@ -124,10 +107,10 @@ function Gallery({ deleting, onDelete }: GalleryProps) {
         </div>
       )}
 
-      <div ref={sentinelRef} style={{ height: 1 }} />
+      <div ref={sentinelRef} className="h-px" />
 
       {(isFetchingNextPage || isCatchingUp) && (
-        <div style={{ textAlign: "center", padding: 20, color: "#666" }}>
+        <div className="text-center p-5 text-fg-subtle">
           <p>Loading more...</p>
         </div>
       )}

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import "./App.css";
 import Gallery from "./components/Gallery";
 import UploadImage from "./components/UploadImage";
 import UploadStatus from "./components/UploadStatus";
@@ -30,39 +29,15 @@ function App() {
 
   return (
     <UploadQueueProvider>
-      <div
-        style={{
-          margin: "2rem auto",
-          fontFamily: "Inter, sans-serif",
-          padding: "0 20px",
-        }}
-      >
-        <h1
-          style={{
-            textAlign: "center",
-            fontSize: "3rem",
-            fontWeight: 700,
-            marginBottom: 40,
-            letterSpacing: "-2px",
-            color: "#222",
-          }}
-        >
+      <div className="mx-auto my-8 px-5 font-sans">
+        <h1 className="text-center text-5xl font-bold mb-10 tracking-[-2px] text-fg-strong">
           Image Gallery
         </h1>
 
         <UploadImage />
 
         {error && (
-          <div
-            style={{
-              background: "#f8d7da",
-              color: "#721c24",
-              padding: 12,
-              borderRadius: 6,
-              marginBottom: 20,
-              textAlign: "center",
-            }}
-          >
+          <div className="bg-danger-soft text-danger-strong p-3 rounded-md mb-5 text-center">
             Error: {error.message}
           </div>
         )}

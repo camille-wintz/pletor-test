@@ -5,14 +5,11 @@ import TaskRow from "./TaskRow";
 function Spinner({ size = 16 }: { size?: number }) {
   return (
     <span
+      className="inline-block rounded-full border-2 border-white/40 animate-spin-slow"
       style={{
-        display: "inline-block",
         width: size,
         height: size,
-        border: "2px solid rgba(255,255,255,0.4)",
-        borderTopColor: "#fff",
-        borderRadius: "50%",
-        animation: "upload-spin 0.8s linear infinite",
+        borderTopColor: "var(--color-surface)",
       }}
     />
   );
@@ -40,19 +37,9 @@ function UploadStatus() {
     <div
       role="region"
       aria-label="Upload status"
-      style={{
-        position: "fixed",
-        right: 20,
-        bottom: 20,
-        width: panelExpanded ? 360 : "auto",
-        maxWidth: "calc(100vw - 40px)",
-        background: "#fff",
-        borderRadius: 12,
-        boxShadow: "0 4px 20px rgba(0,0,0,0.18)",
-        overflow: "hidden",
-        fontFamily: "Inter, sans-serif",
-        zIndex: 1000,
-      }}
+      className={`fixed right-5 bottom-5 max-w-[calc(100vw-40px)] bg-surface rounded-xl overflow-hidden font-sans z-1000 shadow-panel ${
+        panelExpanded ? "w-90" : "w-auto"
+      }`}
     >
       <button
         type="button"
@@ -61,44 +48,25 @@ function UploadStatus() {
         aria-label={
           panelExpanded ? "Minimize upload status" : "Expand upload status"
         }
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          width: "100%",
-          padding: "10px 14px",
-          background: "#222",
-          color: "#fff",
-          border: "none",
-          cursor: "pointer",
-          fontSize: 14,
-          fontWeight: 500,
-          outline: "none",
-        }}
+        className="flex items-center gap-2.5 w-full px-3.5 py-2.5 bg-fg-strong text-surface border-none cursor-pointer text-sm font-medium outline-none"
       >
         {activeCount > 0 ? (
           <Spinner />
         ) : (
-          <span style={{ fontSize: 16 }}>✓</span>
+          <span className="text-base">✓</span>
         )}
-        <span style={{ flex: 1, textAlign: "left" }}>
+        <span className="flex-1 text-left">
           {activeCount > 0
             ? `${activeCount} uploading${finishedCount > 0 ? ` · ${finishedCount} done` : ""}`
             : `${finishedCount} finished`}
         </span>
-        <span style={{ fontSize: 12, opacity: 0.7 }}>
+        <span className="text-xs opacity-70">
           {panelExpanded ? "▾" : "▸"}
         </span>
       </button>
 
       {panelExpanded && (
-        <div
-          style={{
-            maxHeight: 400,
-            overflowY: "auto",
-            padding: "4px 14px",
-          }}
-        >
+        <div className="max-h-100 overflow-y-auto px-3.5 py-1">
           {tasks.map((task) => (
             <TaskRow
               key={task.id}
@@ -108,24 +76,17 @@ function UploadStatus() {
             />
           ))}
           {hasFinished && (
-            <div style={{ padding: "8px 0", textAlign: "right" }}>
+            <div className="py-2 text-right">
               <button
                 type="button"
                 onClick={clearFinished}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "#666",
-                  fontSize: 12,
-                  cursor: "pointer",
-                  textDecoration: "underline",
-                }}
+                className="bg-transparent border-none text-fg-subtle text-xs cursor-pointer underline"
               >
                 Clear finished
               </button>
             </div>
           )}
-          <div style={{ padding: "8px 0 12px" }}>
+          <div className="pt-2 pb-3">
             <FilePicker compact onFiles={addFiles} />
           </div>
         </div>

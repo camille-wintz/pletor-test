@@ -37,21 +37,11 @@ function FilePicker({ onFiles, compact = false }: FilePickerProps) {
         e.preventDefault()
         setIsDragging(false)
       }}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'column',
-        textAlign: 'center',
-        cursor: 'pointer',
-        border: isDragging ? '2px dashed #0066cc' : '2px dashed #ccc',
-        borderRadius: 8,
-        background: isDragging ? '#e6f0ff' : '#fff',
-        padding: compact ? 12 : 24,
-        minHeight: compact ? 60 : 120,
-        position: 'relative',
-        transition: 'all 0.15s ease',
-      }}
+      className={`flex flex-col items-center justify-center text-center cursor-pointer rounded-lg relative transition-all border-2 border-dashed ${
+        compact ? 'p-3 min-h-15' : 'p-6 min-h-30'
+      } ${
+        isDragging ? 'border-primary bg-primary-soft' : 'border-border bg-surface'
+      }`}
     >
       <input
         ref={inputRef}
@@ -59,20 +49,12 @@ function FilePicker({ onFiles, compact = false }: FilePickerProps) {
         accept={ACCEPT_ATTR}
         multiple
         onChange={(e) => handleFiles(e.target.files)}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          opacity: 0,
-          cursor: 'pointer',
-        }}
+        className="absolute inset-0 opacity-0 cursor-pointer"
       />
       <p
-        style={{
-          margin: 0,
-          color: '#666',
-          fontSize: compact ? 12 : 14,
-          pointerEvents: 'none',
-        }}
+        className={`m-0 text-fg-subtle pointer-events-none ${
+          compact ? 'text-xs' : 'text-sm'
+        }`}
       >
         {isDragging
           ? 'Drop images here'
@@ -81,14 +63,7 @@ function FilePicker({ onFiles, compact = false }: FilePickerProps) {
             : 'Drag & drop images here, or click to select'}
       </p>
       {!compact && (
-        <p
-          style={{
-            margin: '4px 0 0',
-            color: '#999',
-            fontSize: 12,
-            pointerEvents: 'none',
-          }}
-        >
+        <p className="mt-1 text-xs text-fg-faint pointer-events-none">
           JPEG, PNG, GIF, WebP — up to 10MB each
         </p>
       )}

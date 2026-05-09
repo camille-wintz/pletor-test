@@ -10,33 +10,14 @@ function UploadImage() {
   const showExpandButton = showPanelControls && !panelExpanded;
 
   return (
-    <div
-      style={{
-        background: "#f8f9fa",
-        padding: 24,
-        borderRadius: 12,
-        marginBottom: 40,
-        maxWidth: 500,
-        margin: "0 auto 40px",
-      }}
-    >
-      <h2 style={{ margin: "0 0 16px 0", fontSize: 18, fontWeight: 600 }}>
-        Add new images
-      </h2>
+    <div className="bg-surface-alt p-6 rounded-xl mb-10 max-w-125 mx-auto">
+      <h2 className="mt-0 mb-4 text-lg font-semibold">Add new images</h2>
 
       <FilePicker onFiles={addFiles} />
 
       {showPanelControls && (
-        <div
-          style={{
-            marginTop: 12,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-          }}
-        >
-          <span style={{ fontSize: 13, color: "#444" }}>
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <span className="text-[13px] text-fg-muted">
             {activeCount > 0
               ? `${activeCount} ${activeCount === 1 ? "file" : "files"} uploading`
               : `${totalCount} ${totalCount === 1 ? "upload" : "uploads"} finished`}
@@ -45,16 +26,7 @@ function UploadImage() {
             <button
               type="button"
               onClick={expandPanel}
-              style={{
-                padding: "6px 12px",
-                fontSize: 12,
-                fontWeight: 500,
-                borderRadius: 6,
-                border: "1px solid #ccc",
-                background: "#fff",
-                color: "#333",
-                cursor: "pointer",
-              }}
+              className="px-3 py-1.5 text-xs font-medium rounded-md border border-border bg-surface text-fg cursor-pointer"
             >
               Show details
             </button>
